@@ -6,7 +6,10 @@
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "test": "jest",
+    "test": "jest --coverage --verbose",
+    "test:watch": "jest --watch",
+    "test:integration": "jest --testMatch='**/*.integration.test.ts'",
+    "test:unit": "jest --testMatch='**/*.unit.test.ts'",
     "lint": "eslint src --ext .ts"
   },
   "dependencies": {
@@ -36,9 +39,12 @@
     "@types/jsonwebtoken": "^9.0.5",
     "@types/multer": "^1.4.11",
     "@types/uuid": "^9.0.7",
+    "@types/supertest": "^6.0.2",
     "typescript": "^5.3.3",
     "ts-node-dev": "^2.0.0",
     "jest": "^29.7.0",
-    "@types/jest": "^29.5.11"
+    "@types/jest": "^29.5.11",
+    "ts-jest": "^29.1.1",
+    "supertest": "^6.3.3"
   }
 }
