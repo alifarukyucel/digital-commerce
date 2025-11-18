@@ -1,0 +1,124 @@
+// Prisma Schema for Digital Commerce Platform
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String    @id @default(uuid())
+  email             String    @unique
+  passwordHash      String?   @map("password_hash")
+  username          String    @unique
+  displayName       String?   @map("display_name")
+  bio               String?
+  avatarUrl         String?   @map("avatar_url")
+  stripeAccountId   String?   @map("stripe_account_id")
+  emailVerified     Boolean   @default(false) @map("email_verified")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  products          Product[]
+  orders            Order[]   @relation("SellerOrders")
+
+  @@index([email])
+  @@index([username])
+  @@map("users")
+}
+
+model Product {
+  id              String    @id @default(uuid())
+  userId          String    @map("user_id")
+  title           String
+  slug            String
+  description     String?
+  priceCents      Int       @map("price_cents")
+  currency        String    @default("USD")
+  coverImageUrl   String?   @map("cover_image_url")
+  productType     String    @map("product_type") // download, membership, license
+  isPublished     Boolean   @default(false) @map("is_published")
+  salesCount      Int       @default(0) @map("sales_count")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  files           ProductFile[]
+  orders          Order[]
+  discountCodes   DiscountCode[]
+
+  @@unique([userId, slug])
+  @@index([userId])
+  @@index([slug])
+  @@map("products")
+}
+
+model ProductFile {
+  id            String    @id @default(uuid())
+  productId     String    @map("product_id")
+  fileName      String    @map("file_name")
+  fileSize      BigInt?   @map("file_size")
+  fileUrl       String    @map("file_url")
+  fileType      String?   @map("file_type")
+  displayOrder  Int       @default(0) @map("display_order")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  product       Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@map("product_files")
+}
+
+model Order {
+  id                      String    @id @default(uuid())
+  productId               String    @map("product_id")
+  userId                  String    @map("user_id") // seller
+  buyerEmail              String    @map("buyer_email")
+  buyerName               String?   @map("buyer_name")
+  amountCents             Int       @map("amount_cents")
+  currency                String    @default("USD")
+  stripePaymentIntentId   String?   @map("stripe_payment_intent_id")
+  status                  String    // pending, completed, refunded, failed
+  downloadToken           String?   @unique @map("download_token")
+  downloadExpiresAt       DateTime? @map("download_expires_at")
+  downloadCount           Int       @default(0) @map("download_count")
+  createdAt               DateTime  @default(now()) @map("created_at")
+  updatedAt               DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  product                 Product   @relation(fields: [productId], references: [id])
+  seller                  User      @relation("SellerOrders", fields: [userId], references: [id])
+
+  @@index([productId])
+  @@index([userId])
+  @@index([buyerEmail])
+  @@index([downloadToken])
+  @@map("orders")
+}
+
+model DiscountCode {
+  id            String    @id @default(uuid())
+  productId     String    @map("product_id")
+  code          String
+  discountType  String    @map("discount_type") // percentage, fixed
+  discountValue Int       @map("discount_value")
+  maxUses       Int?      @map("max_uses")
+  usesCount     Int       @default(0) @map("uses_count")
+  expiresAt     DateTime? @map("expires_at")
+  isActive      Boolean   @default(true) @map("is_active")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  product       Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, code])
+  @@index([productId])
+  @@index([code])
+  @@map("discount_codes")
+}
